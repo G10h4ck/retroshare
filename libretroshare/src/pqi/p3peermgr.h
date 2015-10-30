@@ -110,14 +110,14 @@ class p3NetMgrIMPL;
 
 class p3PeerMgr
 {
-	public:
+public:
+	virtual bool addFriend(const RsPeerId &ssl_id, const RsPgpId &gpg_id,
+	                       uint32_t netMode = RS_NET_MODE_UDP,
+	                       uint16_t vsDisc = RS_VS_DISC_FULL,
+	                       uint16_t vsDht = RS_VS_DHT_FULL,
+	                       time_t lastContact = 0,
+	                       ServicePermissionFlags = ServicePermissionFlags(RS_NODE_PERM_DEFAULT)) = 0;
 
-        p3PeerMgr() { return; }
-virtual ~p3PeerMgr() { return; }
-
-virtual bool 	addFriend(const RsPeerId &ssl_id, const RsPgpId &gpg_id, uint32_t netMode = RS_NET_MODE_UDP,
-					uint16_t vsDisc = RS_VS_DISC_FULL, uint16_t vsDht = RS_VS_DHT_FULL, 
-                    time_t lastContact = 0,ServicePermissionFlags = ServicePermissionFlags(RS_NODE_PERM_DEFAULT)) = 0;
 virtual bool	removeFriend(const RsPeerId &ssl_id, bool removePgpId) = 0;
 
 virtual bool	isFriend(const RsPeerId& ssl_id) = 0;

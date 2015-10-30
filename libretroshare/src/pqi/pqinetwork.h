@@ -95,7 +95,7 @@ void showSocketError(std::string &out);
 
 std::string socket_errorType(int err);
 
-bool getLocalAddresses(std::list<struct sockaddr_storage> & addrs);
+bool getLocalAddresses(std::list<sockaddr_storage> & addrs);
 
 /* universal socket interface */
 
@@ -103,6 +103,7 @@ int unix_close(int sockfd);
 int unix_socket(int domain, int type, int protocol);
 int unix_fcntl_nonblock(int sockfd);
 int unix_connect(int sockfd, const struct sockaddr *serv_addr, socklen_t addrlen);
+int unix_setsockopt(int sockfd, int level, int optname, const void *optval, socklen_t optlen);
 int unix_getsockopt_error(int sockfd, int *err);
 
 #ifdef WINDOWS_SYS // WINDOWS

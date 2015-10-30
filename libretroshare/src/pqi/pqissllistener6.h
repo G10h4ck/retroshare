@@ -17,15 +17,25 @@
  * along with libretroshare. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef PQISSL6_H
-#define PQISSL6_H
+#ifndef PQISSLLISTENER6_H
+#define PQISSLLISTENER6_H
 
-#include "pqi/pqissl.h"
+#include "pqi/pqiaddress.h"
+#include "pqi/pqissllistener.h"
 
-class pqissl6 : public pqissl
+#include <list>
+
+class pqissllistener6 : public pqissllistener
 {
-protected:
-	int Initiate_Connection();
+public:
+	pqissllistener6(const sockaddr_storage &addr, p3PeerMgr *pm) :
+	    pqissllistener(addr, pm) {}
+
+	int setuplisten();
+	bool exportListenAddresses(std::list<const pqiaddress*>& out);
+
+private:
+	std::list<pqiUrlAddress> listenAddresses;
 };
 
-#endif // PQISSL6_H
+#endif // PQISSLLISTENER6_H

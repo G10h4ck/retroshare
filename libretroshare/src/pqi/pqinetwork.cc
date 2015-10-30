@@ -468,6 +468,14 @@ int unix_connect(int fd, const struct sockaddr *serv_addr, socklen_t socklen)
 	return ret;
 }
 
+int unix_setsockopt(int sockfd, int level, int optname, const void *optval, socklen_t optlen)
+{
+#ifdef WINDOWS_SYS
+	return setsockopt(sockfd, level, optname, (const char *) optval, optlen);
+#else
+	return setsockopt(sockfd, level, optname, optval, optlen);
+#endif
+}
 
 int unix_getsockopt_error(int sockfd, int *err)
 {

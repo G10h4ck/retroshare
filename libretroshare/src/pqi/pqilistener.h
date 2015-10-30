@@ -28,6 +28,9 @@
 
 // operating system specific network header.
 #include "pqi/pqinetwork.h"
+#include "pqi/pqiaddress.h"
+
+#include <list>
 
 class pqilistener
 {
@@ -39,6 +42,31 @@ public:
 	virtual int setListenAddr(const sockaddr_storage & /*addr*/) { return 1; }
 	virtual int setuplisten() { return 1; }
 	virtual int resetlisten() { return 1; }
+
+	/**
+	 * @brief Suggest a listen addrres to the listener
+	 * This can be useful if an external service can find out addresses that the
+	 * listener cannot and want to suggest to the listener to bind on them.
+	 * @return true if the suggestion accepted, false otherwise.
+	 */
+	virtual bool suggestListenAddr(const pqiaddress&) { return false; }
+
+	/**
+	 * @brief Suggest to avoid a listen addrres to the listener
+	 * This can be useful if an external service can find out that an address
+	 * should not be used.
+	 * @return true if the suggestion was accepted, false otherwise.
+	 */
+	virtual bool deprecateListenAddr(const pqiaddress&) { return false; }
+
+	/**
+	 * @brief Export known active listen addresses
+	 * During it's operation a listener can potentially discover addresses if an
+	 * external service is interested in them it can use this method.
+	 * @return true if operacion successed, false otherwise.
+	 */
+	virtual bool exportListenAddresses(std::list<pqiaddress>&)
+	{ return false; }
 };
 
 

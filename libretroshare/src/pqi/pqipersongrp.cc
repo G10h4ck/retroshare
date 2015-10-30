@@ -213,17 +213,16 @@ int	pqipersongrp::init_listener()
 	/* extract our information from the p3ConnectMgr */
 	if (initFlags & PQIPERSON_NO_LISTENER)
 	{
-		RsStackMutex stack(coreMtx); /******* LOCKED MUTEX **********/
+		RS_STACK_MUTEX(coreMtx);
 		pqil = NULL;
 	}
 	else
 	{
-		/* extract details from 
-		 */
+		// extract details
 		struct sockaddr_storage laddr;
 		mLinkMgr->getLocalAddress(laddr);
 		
-		RsStackMutex stack(coreMtx); /******* LOCKED MUTEX **********/
+		RS_STACK_MUTEX(coreMtx);
 		pqil = locked_createListener(laddr);
 	}
 	return 1;

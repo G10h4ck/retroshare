@@ -39,7 +39,7 @@ const int pqipersongrpzone = 354;
 /********************************** SSL Specific features ***************************/
 
 #include "pqi/pqissl.h"
-#include "pqi/pqissllistener.h"
+#include "pqi/pqissllistener6.h"
 #include "pqi/p3peermgr.h"
 
 //#define PQISSLPERSON_DEBUG
@@ -52,7 +52,7 @@ const int pqipersongrpzone = 354;
 
 pqilistener * pqisslpersongrp::locked_createListener(const struct sockaddr_storage &laddr)
 {
-	pqilistener *listener = new pqissllistener(laddr, mPeerMgr);
+	pqilistener *listener = new pqissllistener6(laddr, mPeerMgr);
 	return listener;
 }
 

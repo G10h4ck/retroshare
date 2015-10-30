@@ -17,15 +17,28 @@
  * along with libretroshare. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef PQISSL6_H
-#define PQISSL6_H
+#ifndef PQIADDRESS_H
+#define PQIADDRESS_H
 
-#include "pqi/pqissl.h"
+#include <string>
 
-class pqissl6 : public pqissl
+/**
+ * @brief Generic listen address representation class
+ * Represents address in a protocol agnostic form so we can implement
+ * pqi components for variuos protocols without altering the API.
+ * It is common practice tu use URL to represent this kind of information.
+ */
+class pqiaddress
 {
-protected:
-	int Initiate_Connection();
+public:
+	virtual std::string toStdString() = 0;
 };
 
-#endif // PQISSL6_H
+class pqiUrlAddress : public pqiaddress
+{
+public:
+	std::string toStdString() { return value; }
+	std::string value;
+};
+
+#endif // PQIADDRESS_H

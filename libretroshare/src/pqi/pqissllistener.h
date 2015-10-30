@@ -99,12 +99,11 @@ public:
 								   const sockaddr_storage &raddr) = 0;
 
 protected:
+	int Extract_Failed_SSL_Certificate(const IncomingSSLInfo&);
+
 	struct sockaddr_storage laddr;
 	std::list<AcceptedSSL> accepted_ssl;
 	p3PeerMgr *mPeerMgr;
-
-private:
-	int Extract_Failed_SSL_Certificate(const IncomingSSLInfo&);
 	bool active;
 	int lsock;
 	std::list<IncomingSSLInfo> incoming_ssl ;
