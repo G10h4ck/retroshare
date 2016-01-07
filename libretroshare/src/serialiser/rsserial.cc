@@ -124,10 +124,6 @@ RsItem::RsItem(uint8_t ver, uint8_t cls, uint8_t t, uint8_t subtype)
 	type = (ver << 24) + (cls << 16) + (t << 8) + subtype;
 }
 
-RsItem::~RsItem()
-{
-}
-
 void RsItem::print_string(std::string &out, uint16_t indent)
 {
 	std::ostringstream stream;

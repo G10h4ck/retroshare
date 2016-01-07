@@ -72,44 +72,44 @@ const uint8_t RS_PKT_SUBTYPE_DEFAULT = 0x01; /* if only one subtype */
 
 class RsItem: public RsMemoryManagement::SmallObject
 {
-	public:
-		RsItem(uint32_t t);
-		RsItem(uint8_t ver, uint8_t cls, uint8_t t, uint8_t subtype);
+public:
+	RsItem(uint32_t t);
+	RsItem(uint8_t ver, uint8_t cls, uint8_t t, uint8_t subtype);
 #ifdef DO_STATISTICS
-		void *operator new(size_t s) ;
-		void operator delete(void *,size_t s) ;
+	void *operator new(size_t s) ;
+	void operator delete(void *,size_t s) ;
 #endif
 
-		virtual ~RsItem();
-		virtual void clear() = 0;
-		virtual std::ostream &print(std::ostream &out, uint16_t indent = 0) = 0;
-		void print_string(std::string &out, uint16_t indent = 0);
+	virtual ~RsItem() {}
+	virtual void clear() = 0;
+	virtual std::ostream &print(std::ostream &out, uint16_t indent = 0) = 0;
+	void print_string(std::string &out, uint16_t indent = 0);
 
-		/* source / destination id */
-		const RsPeerId& PeerId() const { return peerId; }
-		void        PeerId(const RsPeerId& id) { peerId = id; }
+	/* source / destination id */
+	const RsPeerId& PeerId() const { return peerId; }
+	void PeerId(const RsPeerId& id) { peerId = id; }
 
-		/* complete id */
-		uint32_t PacketId() const;
+	/* complete id */
+	uint32_t PacketId() const;
 
-		/* id parts */
-		uint8_t  PacketVersion();
-		uint8_t  PacketClass();
-		uint8_t  PacketType();
-		uint8_t  PacketSubType() const;
+	/* id parts */
+	uint8_t PacketVersion();
+	uint8_t PacketClass();
+	uint8_t PacketType();
+	uint8_t PacketSubType() const;
 
-		/* For Service Packets */
-		RsItem(uint8_t ver, uint16_t service, uint8_t subtype);
-		uint16_t  PacketService() const; /* combined Packet class/type (mid 16bits) */
-		void    setPacketService(uint16_t service);
+	/* For Service Packets */
+	RsItem(uint8_t ver, uint16_t service, uint8_t subtype);
+	uint16_t PacketService() const; /* combined Packet class/type (mid 16bits) */
+	void setPacketService(uint16_t service);
 
-		inline uint8_t priority_level() const { return _priority_level ;}
-        inline void setPriorityLevel(uint8_t l) { _priority_level = l ;}
+	inline uint8_t priority_level() const { return _priority_level; }
+	inline void setPriorityLevel(uint8_t l) { _priority_level = l; }
 
-	private:
-		uint32_t type;
-		RsPeerId peerId;
-		uint8_t _priority_level ;
+private:
+	uint32_t type;
+	RsPeerId peerId;
+	uint8_t _priority_level;
 };
 
 
@@ -149,7 +149,7 @@ class RsSerialiser
 	std::map<uint32_t, RsSerialType *> serialisers;
 };
 
-bool     setRsItemHeader(void *data, uint32_t size, uint32_t type, uint32_t pktsize);
+bool setRsItemHeader(void *data, uint32_t size, uint32_t type, uint32_t pktsize);
 
 /* Extract Header Information from Packet */
 uint32_t getRsItemId(void *data);
@@ -178,30 +178,20 @@ std::ostream &printIndent(std::ostream &out, uint16_t indent);
 
 class RsRawItem: public RsItem
 {
-	public:
-		RsRawItem(uint32_t t, uint32_t size)
-			:RsItem(t), len(size)
-		{ 
-			data = malloc(len);
-		}
+public:
+	RsRawItem(uint32_t t, uint32_t size) : RsItem(t), len(size)
+	{ data = new uint8_t[len]; }
+	virtual ~RsRawItem() { delete[] data; }
 
-		virtual ~RsRawItem()
-		{
-			if (data)
-				free(data);
-			data = NULL;
-			len = 0;
-		}
+	uint32_t getRawLength() { return len; }
+	uint8_t *getRawData() { return data; }
 
-		uint32_t	getRawLength() { return len; }
-		void  *getRawData() { return data; }
+	virtual void clear() {}
+	virtual std::ostream &print(std::ostream &out, uint16_t indent = 0);
 
-		virtual void clear() { return; } /* what can it do? */
-		virtual std::ostream &print(std::ostream &out, uint16_t indent = 0);
-
-	private:
-		void *data;
-		uint32_t len;
+private:
+	uint8_t *data;
+	uint32_t len;
 };
 
 
