@@ -47,9 +47,13 @@ public:
 	virtual std::ostream &printHex(std::ostream &out, uint16_t indent) const;
 
 	uint16_t mType;
-	std::list<std::string> ids; /* Mandatory */
+	std::list<std::string> strSet; /// Mandatory
 };
 
+/**
+ * @brief The RsTlvStringSetRef class
+ * This is exactly the same as StringSet, but it uses an alternative list.
+ */
 class RsTlvStringSetRef: public RsTlvItem
 {
 public:
@@ -62,5 +66,5 @@ public:
 	virtual std::ostream &print(std::ostream &out, uint16_t indent) const;
 
 	uint16_t mType;
-	std::list<std::string> &ids; /* Mandatory */
+	std::list<std::string> &strSetRef; /// Mandatory
 };

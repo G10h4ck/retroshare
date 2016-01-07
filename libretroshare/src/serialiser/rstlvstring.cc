@@ -59,7 +59,7 @@ bool     RsTlvStringSet::SetTlv(void *data, uint32_t size, uint32_t *offset) con
 
 	std::list<std::string>::const_iterator it;
 
-	for(it = ids.begin(); it != ids.end() ; ++it)
+	for(it = strSet.begin(); it != strSet.end() ; ++it)
 	{
 		if (it->length() > 0)
 			ok &= SetTlvString(data, tlvend, offset, TLV_TYPE_STR_GENID, *it);
@@ -72,7 +72,7 @@ bool     RsTlvStringSet::SetTlv(void *data, uint32_t size, uint32_t *offset) con
 
 void RsTlvStringSet::TlvClear()
 {
-	ids.clear();
+	strSet.clear();
 
 }
 
@@ -85,7 +85,7 @@ uint32_t RsTlvStringSet::TlvSize() const
 
 	std::list<std::string>::const_iterator it;
 
-	for(it = ids.begin(); it != ids.end() ; ++it)
+	for(it = strSet.begin(); it != strSet.end() ; ++it)
 	{
 		if (it->length() > 0)
 			s += GetTlvStringSize(*it);
@@ -95,21 +95,18 @@ uint32_t RsTlvStringSet::TlvSize() const
 }
 
 
-bool     RsTlvStringSet::GetTlv(void *data, uint32_t size, uint32_t *offset)
-{	
-	if (size < *offset + TLV_HEADER_SIZE)
-		return false;	
+bool RsTlvStringSet::GetTlv(void *data, uint32_t size, uint32_t *offset)
+{
+	if (size < *offset + TLV_HEADER_SIZE) return false;
 
-	uint16_t tlvtype = GetTlvType( &(((uint8_t *) data)[*offset])  );
-	uint32_t tlvsize = GetTlvSize( &(((uint8_t *) data)[*offset])  );
+	uint16_t tlvtype = GetTlvType( &(((uint8_t *) data)[*offset]) );
+	uint32_t tlvsize = GetTlvSize( &(((uint8_t *) data)[*offset]) );
 	uint32_t tlvend = *offset + tlvsize;
 
+	if (size < tlvend) // check size
+		return false;// not enough space
 
-
-	if (size < tlvend)    /* check size */
-		return false; /* not enough space */
-
-	if (tlvtype != mType) /* check type */
+	if (tlvtype != mType) // check type
 		return false;
 
 	bool ok = true;
@@ -117,26 +114,19 @@ bool     RsTlvStringSet::GetTlv(void *data, uint32_t size, uint32_t *offset)
 	/* ready to load */
 	TlvClear();
 
-	/* skip the header */
+	// skip the header
 	(*offset) += TLV_HEADER_SIZE;
 
-	
-
-/* while there is TLV  */
+	// while there is TLV
 	while((*offset) + 2 < tlvend)
 	{
-		/* get the next type */
+		// get the next type
 		uint16_t tlvsubtype = GetTlvType( &(((uint8_t *) data)[*offset]) );
-	
 		if (tlvsubtype == TLV_TYPE_STR_GENID)
 		{
 			std::string newIds;
 			ok &= GetTlvString(data, tlvend, offset, TLV_TYPE_STR_GENID, newIds);
-			if(ok)
-			{
-				ids.push_back(newIds);
-				
-			}
+			if(ok) strSet.push_back(newIds);
 		}
 		else
 		{
@@ -144,12 +134,9 @@ bool     RsTlvStringSet::GetTlv(void *data, uint32_t size, uint32_t *offset)
 			ok &= SkipUnknownTlv(data, tlvend, offset);
 		}
 
-		if (!ok)
-		{
-			break;
-		}
+		if (!ok) break;
 	}
-	
+
 	/***************************************************************************
 	 * NB: extra components could be added (for future expansion of the type).
 	 *            or be present (if this code is reading an extended version).
@@ -159,8 +146,8 @@ bool     RsTlvStringSet::GetTlv(void *data, uint32_t size, uint32_t *offset)
 	if (*offset != tlvend)
 	{
 #ifdef TLV_DEBUG
-		std::cerr << "RsTlvPeerIdSet::GetTlv() Warning extra bytes at end of item";
-		std::cerr << std::endl;
+		std::cerr << "RsTlvPeerIdSet::GetTlv() Warning extra bytes at end of item"
+		          << std::endl;
 #endif
 		*offset = tlvend;
 	}
@@ -179,7 +166,7 @@ std::ostream &RsTlvStringSet::print(std::ostream &out, uint16_t indent) const
 	out << std::endl;
 
 	std::list<std::string>::const_iterator it;
-	for(it = ids.begin(); it != ids.end() ; ++it)
+	for(it = strSet.begin(); it != strSet.end() ; ++it)
 	{
 		printIndent(out, int_Indent);
 		out << "id:" << *it;
@@ -202,7 +189,7 @@ std::ostream &RsTlvStringSet::printHex(std::ostream &out, uint16_t indent) const
 	out << std::endl;
 
 	std::list<std::string>::const_iterator it;
-	for(it = ids.begin(); it != ids.end() ; ++it)
+	for(it = strSet.begin(); it != strSet.end() ; ++it)
 	{
 		printIndent(out, int_Indent);
 		out << "id: 0x" << RsUtil::BinToHex(*it);
@@ -216,80 +203,60 @@ std::ostream &RsTlvStringSet::printHex(std::ostream &out, uint16_t indent) const
 
 
 /************************************* String Set Ref ************************************/
-/* This is exactly the same as StringSet, but it uses an alternative list.
- */
-RsTlvStringSetRef::RsTlvStringSetRef(uint16_t type, std::list<std::string> &refids)
-	:mType(type), ids(refids)
-{
-}
+RsTlvStringSetRef::RsTlvStringSetRef(uint16_t type, std::list<std::string> &strSet)
+	:mType(type), strSetRef(strSet) {}
 
-void RsTlvStringSetRef::TlvClear()
-{
-    ids.clear();
-
-}
+void RsTlvStringSetRef::TlvClear() { strSetRef.clear(); }
 
 uint32_t RsTlvStringSetRef::TlvSize() const
 {
-
 	uint32_t s = TLV_HEADER_SIZE; /* header */
 
 	/* determine the total size of ids strings in list */
 
 	std::list<std::string>::const_iterator it;
 	
-	for(it = ids.begin(); it != ids.end() ; ++it)
-	{
-		if (it->length() > 0)
-			s += GetTlvStringSize(*it);
-	}
+	for(it = strSetRef.begin(); it != strSetRef.end() ; ++it)
+		if (it->length() > 0) s += GetTlvStringSize(*it);
 
 	return s;
 }
 
 
-bool     RsTlvStringSetRef::SetTlv(void *data, uint32_t size, uint32_t *offset) const
+bool RsTlvStringSetRef::SetTlv(void *data, uint32_t size, uint32_t *offset) const
 {
 	/* must check sizes */
 	uint32_t tlvsize = TlvSize();
 	uint32_t tlvend  = *offset + tlvsize;
 
-	if (size < tlvend)
-		return false; /* not enough space */
+	if (size < tlvend) return false; /* not enough space */
 
 	bool ok = true;
 
-	
-		/* start at data[offset] */
+	/* start at data[offset] */
 	ok &= SetTlvBase(data, tlvend, offset, mType , tlvsize);
 
 	/* determine the total size of ids strings in list */
 
 	std::list<std::string>::const_iterator it;
 	
-	for(it = ids.begin(); it != ids.end() ; ++it)
-	{
+	for(it = strSetRef.begin(); it != strSetRef.end() ; ++it)
 		if (it->length() > 0)
 			ok &= SetTlvString(data, tlvend, offset, TLV_TYPE_STR_GENID, *it); 
-	}
 
 	return ok;
-
 }
 
 
-bool     RsTlvStringSetRef::GetTlv(void *data, uint32_t size, uint32_t *offset)
-{	
-	if (size < *offset + TLV_HEADER_SIZE)
-		return false;	
+bool RsTlvStringSetRef::GetTlv(void *data, uint32_t size, uint32_t *offset)
+{
+	if (size < *offset + TLV_HEADER_SIZE) return false;
 
 	uint16_t tlvtype = GetTlvType( &(((uint8_t *) data)[*offset])  );
 	uint32_t tlvsize = GetTlvSize( &(((uint8_t *) data)[*offset])  );
 	uint32_t tlvend = *offset + tlvsize;
 
-
-
-	if (size < tlvend)    /* check size */
+	if (size < tlvend) /* check size */
 		return false; /* not enough space */
 
 	if (tlvtype != mType) /* check type */
@@ -303,8 +270,6 @@ bool     RsTlvStringSetRef::GetTlv(void *data, uint32_t size, uint32_t *offset)
 	/* skip the header */
 	(*offset) += TLV_HEADER_SIZE;
 
-	
-
 /* while there is TLV  */
 	while((*offset) + 2 < tlvend)
 	{
@@ -317,7 +282,7 @@ bool     RsTlvStringSetRef::GetTlv(void *data, uint32_t size, uint32_t *offset)
 			ok &= GetTlvString(data, tlvend, offset, TLV_TYPE_STR_GENID, newIds);
 			if(ok)
 			{
-				ids.push_back(newIds);
+				strSetRef.push_back(newIds);
 				
 			}
 		}
@@ -362,7 +327,7 @@ std::ostream &RsTlvStringSetRef::print(std::ostream &out, uint16_t indent) const
 	out << std::endl;
 
 	std::list<std::string>::const_iterator it;
-	for(it = ids.begin(); it != ids.end() ; ++it)
+	for(it = strSetRef.begin(); it != strSetRef.end() ; ++it)
 	{
 		printIndent(out, int_Indent);
 		out << "id:" << *it;
@@ -371,6 +336,5 @@ std::ostream &RsTlvStringSetRef::print(std::ostream &out, uint16_t indent) const
 
 	printEnd(out, "RsTlvStringSetRef", indent);
 	return out;
-
 }
 

@@ -1282,7 +1282,7 @@ RsFeedReaderErrorState p3FeedReaderThread::processTransformation(const RsFeedRea
 		break;
 	case RS_FEED_TRANSFORMATION_TYPE_XPATH:
 		msg->descriptionTransformed = msg->description;
-		result = processXPath(feed.xpathsToUse.ids, feed.xpathsToRemove.ids, msg->descriptionTransformed, errorString);
+		result = processXPath(feed.xpathsToUse.strSet, feed.xpathsToRemove.strSet, msg->descriptionTransformed, errorString);
 		break;
 	case RS_FEED_TRANSFORMATION_TYPE_XSLT:
 		msg->descriptionTransformed = msg->description;

@@ -97,8 +97,8 @@ static void feedToInfo(const RsFeedReaderFeed *feed, FeedInfo &info)
 	info.errorString = feed->errorString;
 
 	info.transformationType = feed->transformationType;
-	info.xpathsToUse = feed->xpathsToUse.ids;
-	info.xpathsToRemove = feed->xpathsToRemove.ids;
+	info.xpathsToUse = feed->xpathsToUse.strSet;
+	info.xpathsToRemove = feed->xpathsToRemove.strSet;
 	info.xslt = feed->xslt;
 
 	info.flag.folder = (feed->flag & RS_FEED_FLAG_FOLDER);
@@ -153,8 +153,8 @@ static void infoToFeed(const FeedInfo &info, RsFeedReaderFeed *feed)
 	feed->forumId = info.forumId;
 
 	feed->transformationType = info.transformationType;
-	feed->xpathsToUse.ids = info.xpathsToUse;
-	feed->xpathsToRemove.ids = info.xpathsToRemove;
+	feed->xpathsToUse.strSet = info.xpathsToUse;
+	feed->xpathsToRemove.strSet = info.xpathsToRemove;
 	feed->xslt = info.xslt;
 
 //	feed->preview = info.flag.preview;

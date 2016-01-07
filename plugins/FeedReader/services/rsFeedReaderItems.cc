@@ -52,8 +52,8 @@ void RsFeedReaderFeed::clear()
 	errorState = RS_FEED_ERRORSTATE_OK;
 	errorString.clear();
 	transformationType = RS_FEED_TRANSFORMATION_TYPE_NONE;
-	xpathsToUse.ids.clear();
-	xpathsToRemove.ids.clear();
+	xpathsToUse.strSet.clear();
+	xpathsToRemove.strSet.clear();
 	xslt.clear();
 
 	preview = false;
@@ -214,7 +214,7 @@ RsFeedReaderFeed *RsFeedReaderSerialiser::deserialiseFeed(void *data, uint32_t *
 
 	if (version == 0)
 	{
-		if (!item->xpathsToUse.ids.empty() || !item->xpathsToRemove.ids.empty())
+		if (!item->xpathsToUse.strSet.empty() || !item->xpathsToRemove.strSet.empty())
 		{
 			/* set transformation type */
 			item->transformationType = RS_FEED_TRANSFORMATION_TYPE_XPATH;
