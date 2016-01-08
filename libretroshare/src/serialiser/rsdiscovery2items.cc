@@ -5,6 +5,7 @@
  * RetroShare Serialiser.
  *
  * Copyright 2007-2008 by Robert Fernie.
+ * Copyright (C) 2014 Gioacchino Mazzurco <gio@eigenlab.org>
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Library General Public
@@ -70,7 +71,7 @@ uint32_t RsDiscSerialiser::size(RsItem *i)
 }
 
 /* serialise the data to the buffer */
-bool    RsDiscSerialiser::serialise(RsItem *i, void *data, uint32_t *pktsize)
+bool RsDiscSerialiser::serialise(RsItem *i, void *data, uint32_t *pktsize)
 {
 	RsDiscPgpListItem *pgplist;
 	RsDiscPgpCertItem *pgpcert;
@@ -155,6 +156,14 @@ std::ostream &RsDiscPgpListItem::print(std::ostream &out, uint16_t indent)
 	return out;
 }
 
+void RsDiscContactUrlItem::clear()
+{
+	pgpId.clear();
+	sslId.clear();
+	location.clear();
+	version.clear();
+	listenUrlSet.TlvClear();
+}
 
 uint32_t RsDiscSerialiser::sizePgpList(RsDiscPgpListItem *item)
 {
@@ -692,7 +701,7 @@ uint32_t RsDiscSerialiser::sizeContact(RsDiscContactItem *item)
 
 /* serialise the data to the buffer */
 bool RsDiscSerialiser::serialiseContact(RsDiscContactItem *item, void *data,
-										uint32_t *pktsize)
+                                        uint32_t *pktsize)
 {
 	uint32_t tlvsize = sizeContact(item);
 	uint32_t offset = 0;
@@ -883,5 +892,98 @@ RsDiscContactItem *RsDiscSerialiser::deserialiseContact(void *data, uint32_t *pk
 
 	return item;
 }
+
+uint32_t RsDiscSerialiser::sizeContactUrl(const RsDiscContactUrlItem& item)
+{
+	uint32_t s = 8; // TODO: 2016/01/07 use ITEM_HEADER_SIZE or similar
+	s += item.pgpId.serial_size();
+	s += item.sslId.serial_size();
+
+	s += GetTlvStringSize(item.location);
+	s += GetTlvStringSize(item.version);
+
+	s += 4; // last contact
+
+	s += item.listenUrlSet.TlvSize();
+
+	return s;
+}
+
+// serialise the data to the buffer
+bool RsDiscSerialiser::serialiseContactUrl(const RsDiscContactUrlItem& item,
+                                           uint8_t data[], uint32_t& size)
+{
+	uint32_t tlvsize = sizeContactUrl(item);
+	uint32_t offset = 0;
+
+	if (size < tlvsize) return false;
+	size = tlvsize;
+
+	bool ok = setRsItemHeader(data, tlvsize, item.PacketId(), tlvsize);
+	offset += 8; // skip the header
+
+	scaq(ok, item.pgpId.serialise(data, tlvsize, offset));
+	scaq(ok, item.sslId.serialise(data, tlvsize, offset));
+	scaq(ok, SetTlvString(data, tlvsize, &offset, TLV_TYPE_STR_LOCATION, item.location));
+	scaq(ok, SetTlvString(data, tlvsize, &offset, TLV_TYPE_STR_VERSION, item.version));
+	scaq(ok, setRawUInt32(data, tlvsize, &offset, item.lastContact));
+	scaq(ok, item.listenUrlSet.SetTlv(data, size, &offset));
+	scaq(ok,(offset == tlvsize));
+
+	return ok;
+}
+
+bool deserialiseContactUrl(RsDiscContactUrlItem& item, const uint8_t data[],
+                           uint32_t &size)
+{
+	uint32_t rstype = getRsItemId(data);
+	uint32_t rssize = getRsItemSize(data);
+	uint32_t offset = 0;
+
+	bool ok = RS_PKT_VERSION_SERVICE == getRsItemVersion(rstype);
+	scaq(ok, RS_SERVICE_TYPE_DISC == getRsItemService(rstype));
+	scaq(ok, RS_PKT_SUBTYPE_DISC_CONTACT_URL == getRsItemSubType(rstype));
+	scaq(ok, size < rssize);
+
+	if(!ok) return false;
+
+	size = rssize;
+	item.clear();
+	offset += 8; // skip the header
+
+	scaq(ok, item.pgpId.deserialise(data, rssize, offset));
+	scaq(ok, item.sslId.deserialise(data, rssize, offset));
+	scaq(ok, RsTlvItem::GetTlvString(data, rssize, offset,
+	                                 TLV_TYPE_STR_LOCATION, item.location));
+	scaq(ok, RsTlvItem::GetTlvString(data, rssize, offset,
+	                                 TLV_TYPE_STR_VERSION, item.version));
+	scaq(ok, getRawUInt32(data, rssize, offset, item.lastContact));
+	scaq(ok, item.listenUrlSet.GetTlv(data, size, offset));
+	scaq(ok, rssize >= (offset + TLV_HEADER_SIZE));
+	scaq(ok, offset == rssize);
+
+	return ok;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 /*************************************************************************/

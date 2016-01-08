@@ -4,6 +4,7 @@
  * Serialiser for RetroShare.
  *
  * Copyright 2004-2008 by Robert Fernie.
+ * Copyright (C) 2014 Gioacchino Mazzurco <gio@eigenlab.org>
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Library General Public
@@ -32,12 +33,14 @@
 #include "serialiser/rstlvidset.h"
 #include "serialiser/rstlvaddrs.h"
 #include "serialiser/rsserviceids.h"
+#include "serialiser/rstlvstring.h"
 
 const uint8_t RS_PKT_SUBTYPE_DISC_PGP_LIST           = 0x01;
 const uint8_t RS_PKT_SUBTYPE_DISC_PGP_CERT           = 0x02;
 const uint8_t RS_PKT_SUBTYPE_DISC_CONTACT_deprecated = 0x03;
 const uint8_t RS_PKT_SUBTYPE_DISC_SERVICES           = 0x04;
 const uint8_t RS_PKT_SUBTYPE_DISC_CONTACT            = 0x05;
+const uint8_t RS_PKT_SUBTYPE_DISC_CONTACT_URL        = 0x06;
 
 class RsDiscItem: public RsItem
 {
@@ -65,7 +68,6 @@ public:
 	uint32_t mode;
 	RsTlvPgpIdSet pgpIdSet;
 };
-
 
 
 class RsDiscPgpCertItem: public RsDiscItem
@@ -129,6 +131,28 @@ public:
 	RsTlvIpAddrSet extAddrList;
 };
 
+/**
+ * @brief The RsDiscContactUrlItem class
+ * 2016/01/07 This class aims to obsolete RsDiscContactItem soon
+ */
+class RsDiscContactUrlItem: public RsDiscItem
+{
+public:
+	RsDiscContactUrlItem() : RsDiscItem(RS_PKT_SUBTYPE_DISC_CONTACT_URL),
+	  listenUrlSet(TLV_TYPE_STRINGSET)
+	{ setPriorityLevel(QOS_PRIORITY_RS_DISC_CONTACT); }
+	~RsDiscContactUrlItem() {}
+
+	void clear();
+
+	RsPgpId pgpId; /// Mandatory
+	RsPeerId sslId; /// Mandatory
+	std::string location; /// Mandatory
+	std::string version; /// Mandatory
+	uint32_t lastContact; /// Mandatory
+	RsTlvStringSet listenUrlSet; /// Mandatory
+};
+
 #if 0
 // TODO: 2016/01/01 Dead code?
 class RsDiscServicesItem: public RsDiscItem
@@ -176,6 +200,12 @@ private:
 	virtual uint32_t sizeContact(RsDiscContactItem *);
 	virtual bool serialiseContact(RsDiscContactItem *item, void *data, uint32_t *size);
 	virtual RsDiscContactItem *deserialiseContact(void *data, uint32_t *size);
+
+	uint32_t sizeContactUrl(const RsDiscContactUrlItem& item);
+	bool serialiseContactUrl(const RsDiscContactUrlItem& item, uint8_t data[],
+	                         uint32_t& size);
+	bool deserialiseContactUrl(RsDiscContactUrlItem& item, const uint8_t data[],
+	                           uint32_t &size);
 
 #if 0
 // TODO: 2016/01/04 Dead code?
