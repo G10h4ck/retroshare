@@ -152,21 +152,18 @@ class RsSerialiser
 bool setRsItemHeader(void *data, uint32_t size, uint32_t type, uint32_t pktsize);
 
 /* Extract Header Information from Packet */
-uint32_t getRsItemId(void *data);
-uint32_t getRsItemSize(void *data);
+uint32_t getRsItemId(const uint8_t data[]);
+uint32_t getRsItemSize(const uint8_t data[]);
 
-uint8_t  getRsItemVersion(uint32_t type);
-uint8_t  getRsItemClass(uint32_t type);
-uint8_t  getRsItemType(uint32_t type);
-uint8_t  getRsItemSubType(uint32_t type);
-
-uint16_t  getRsItemService(uint32_t type);
+uint8_t getRsItemVersion(uint32_t type);
+uint8_t getRsItemClass(uint32_t type);
+uint8_t getRsItemType(uint32_t type);
+uint8_t getRsItemSubType(uint32_t type);
+uint16_t getRsItemService(uint32_t type);
 
 /* size constants */
 uint32_t getRsPktBaseSize();
 uint32_t getRsPktMaxSize();
-
-
 
 /* helper fns for printing */
 std::ostream &printRsItemBase(std::ostream &o, std::string n, uint16_t i);
@@ -195,5 +192,9 @@ private:
 };
 
 
+/// DEPRECATED @see getRsItemSize(const uint8_t data[]);
+uint32_t getRsItemSize(void * data);
+/// DEPRECATED see @see uint32_t getRsItemId(const uint8_t data[]);
+uint32_t getRsItemId(void *data);
 
 #endif /* RS_BASE_SERIALISER_H */

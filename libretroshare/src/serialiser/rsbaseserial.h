@@ -54,7 +54,9 @@ bool setRawUInt8(void *data, uint32_t size, uint32_t *offset, uint8_t in);
 bool getRawUInt16(void *data, uint32_t size, uint32_t *offset, uint16_t *out);
 bool setRawUInt16(void *data, uint32_t size, uint32_t *offset, uint16_t in);
 
-bool getRawUInt32(void *data, uint32_t size, uint32_t *offset, uint32_t *out);
+bool getRawUInt32(const uint8_t data[], uint32_t size, uint32_t &offset,
+                  uint32_t &out);
+
 bool setRawUInt32(void *data, uint32_t size, uint32_t *offset, uint32_t in);
 
 bool getRawUInt64(void *data, uint32_t size, uint32_t *offset, uint64_t *out);
@@ -70,5 +72,7 @@ bool setRawString(void *data, uint32_t size, uint32_t *offset, const std::string
 bool setRawTimeT(void *data, uint32_t size, uint32_t *offset, const time_t& inStr);
 bool getRawTimeT(void *data, uint32_t size, uint32_t *offset, time_t& outStr);
 
-#endif
+/// DEPRECATED
+bool getRawUInt32(void * data, uint32_t size, uint32_t *offset, uint32_t *out);
 
+#endif

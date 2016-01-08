@@ -5,6 +5,7 @@
  * RetroShare Serialiser.
  *
  * Copyright 2007-2008 by Robert Fernie, Chris Parker
+ * Copyright (C) 2016 Gioacchino Mazzurco <gio@eigenlab.org>
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Library General Public
@@ -29,9 +30,9 @@
 #include <inttypes.h>
 
 /**
- * A base class for all tlv items
+ * A base class for all Type Length Value items
  * This class is provided to allow the serialisation and deserialization of
- * compund tlv items that must be (un)packed.
+ * compund TLV items that must be (un)packed.
  */
 class RsTlvItem
 {
@@ -42,7 +43,9 @@ public:
 	virtual void TlvClear() = 0;
 
 	/**
-	 * @brief TlvShallowClear Don't delete allocated data
+	 * @brief TlvShallowClear should to be overriden by derived classes is meant
+	 * to clear content without deleting allocated raw memory chunk.
+	 * If not overridden call TlvClear().
 	 */
 	virtual	void TlvShallowClear();
 
@@ -74,14 +77,60 @@ public:
 	 */
 	virtual bool SetTlv(uint8_t data[], uint32_t size, uint32_t &offset) const;
 
+	/**
+	 * @brief GetTlvType
+	 * @param data
+	 * @return
+	 */
+	static uint16_t GetTlvType(const uint8_t data[]);
+
+	/**
+	 * @brief GetTlvSize return size of a serialized TLV
+	 * @param data @see GetTlv
+	 * @return TLV size parsed from TLV length
+	 */
+	static uint32_t GetTlvSize(const uint8_t data[]);
+
+	/**
+	 * @brief SkipTlv skip TLV element without concerning about type or value
+	 * @param data @see GetTlv
+	 * @param size @see GetTlv
+	 * @param offset @see GetTlv
+	 * @return true if skipping success false otherwise
+	 */
+	static bool SkipTlv(const uint8_t data[], uint32_t size, uint32_t &offset);
+
+	static bool GetTlvString(const uint8_t data[], uint32_t size,
+	                         uint32_t &offset, uint16_t type, std::string &in);
+
 	virtual std::ostream &print(std::ostream &out, uint16_t indent) const = 0;
-	std::ostream &printBase(std::ostream &out, std::string clsName, uint16_t indent) const;
-	std::ostream &printEnd(std::ostream &out, std::string clsName, uint16_t indent) const;
+	std::ostream &printBase(std::ostream &out, std::string clsName,
+	                        uint16_t indent) const;
+	std::ostream &printEnd(std::ostream &out, std::string clsName,
+	                       uint16_t indent) const;
 
 	/// DEPRECATED: Deserialization should operate on read only data
-	bool GetTlv(void *data, uint32_t size, uint32_t *offset);
-	///DEPRECATED: Use the type safer version
-	bool SetTlv(void *data, uint32_t size, uint32_t *offset) const;
+	bool GetTlv(void *data, uint32_t size, uint32_t *offset)
+	{ return GetTlv((const uint8_t *) data, size, *offset); }
+	/// DEPRECATED: Use the type safer version
+	bool SetTlv(void *data, uint32_t size, uint32_t *offset) const
+	{ return SetTlv((uint8_t *)data, size, offset); }
+	/// DEPRECATED: Deserialization should operate on read only data
+	bool GetTlvString(void *data, uint32_t size, uint32_t *offset,
+	                  uint16_t type, std::string &in)
+	{ return GetTlvString((const uint8_t *)data, size, *offset, type, in); }
 };
 
 std::ostream &printIndent(std::ostream &out, uint16_t indent);
+
+/**
+ * @def scaq
+ * @brief Short Circuit ANDeQual macro
+ * Around RS code you can find a lot of <i>ok &=</i> for [de]serialization.
+ * Because it is bitwise &= doesn't shortcircuit even if both arguments are bool
+ * Using this macro instead will improve RS performance in case some TLV fail to
+ * [de]serialize.
+ * @param acc boolean accumulator likely to be <i>ok</i> in RS code
+ * @param expr expression to be evaluated as second && operand
+ */
+#define scaq(acc, expr) do { acc = acc && expr; } while (false)

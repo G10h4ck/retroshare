@@ -109,24 +109,19 @@ bool setRawUInt16(void *data, uint32_t size, uint32_t *offset, uint16_t in)
 
 /* UInt32 get/set */
 
-bool getRawUInt32(void *data, uint32_t size, uint32_t *offset, uint32_t *out)
+bool getRawUInt32(const uint8_t data[], uint32_t size, uint32_t &offset,
+                  uint32_t &out)
 {
-	/* first check there is space */
-	if (size < *offset + 4)
-	{
-		return false;
-	}
-	void *buf = (void *) &(((uint8_t *) data)[*offset]);
+	if (size < offset + 4) return false;
+	const uint8_t * buf = data + offset;
 
 	/* extract the data */
-	uint32_t netorder_num;
-	memcpy(&netorder_num, buf, sizeof(uint32_t));
-
-	(*out) = ntohl(netorder_num);
-	(*offset) += 4;
+	memcpy(&out, buf, sizeof(uint32_t));
+	out = ntohl(out);
+	offset += 4;
 	return true;
 }
-	
+
 bool setRawUInt32(void *data, uint32_t size, uint32_t *offset, uint32_t in)
 {
 	/* first check there is space */
@@ -281,7 +276,12 @@ bool getRawTimeT(void *data,uint32_t size,uint32_t *offset,time_t& t)
 
 	return res ;
 }
+
 bool setRawTimeT(void *data,uint32_t size,uint32_t *offset,const time_t& t)
 {
 	return setRawUInt64(data,size,offset,t) ;
 }
+
+/// DEPRECATED
+bool getRawUInt32(void * data, uint32_t size, uint32_t *offset, uint32_t *out)
+{ return getRawUInt32((const uint8_t *)data, size, *offset, *out); }

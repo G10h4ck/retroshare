@@ -476,48 +476,27 @@ bool   setRsItemHeader(void *data, uint32_t size, uint32_t type, uint32_t pktsiz
 
 	
 
-uint32_t getRsItemId(void *data)
+uint32_t getRsItemId(const uint8_t data[])
 {
 	uint32_t type = 0;
 	uint32_t offset = 0;
-	getRawUInt32(data, 4, &offset, &type);
+	getRawUInt32(data, 4, offset, type);
 	return type;
 }
 
-
-uint32_t getRsItemSize(void *data)
+uint32_t getRsItemSize(const uint8_t data[])
 {
 	uint32_t size = 0;
 	uint32_t offset = 4;
-	getRawUInt32(data, 8, &offset, &size);
+	getRawUInt32(data, 8, offset, size);
 	return size;
 }
 
-uint8_t  getRsItemVersion(uint32_t type)
-{
-	return (type >> 24);
-}
-
-uint8_t  getRsItemClass(uint32_t type)
-{
-	return (type >> 16) & 0xFF;
-}
-
-uint8_t  getRsItemType(uint32_t type)
-{
-	return (type >> 8) & 0xFF;
-}
-
-uint8_t  getRsItemSubType(uint32_t type)
-{
-	return (type & 0xFF);
-}
-
-uint16_t  getRsItemService(uint32_t type)
-{
-	return (type >> 8) & 0xFFFF;
-}
-
+uint8_t getRsItemVersion(uint32_t type) { return (type >> 24); }
+uint8_t getRsItemClass(uint32_t type) { return (type >> 16) & 0xFF; }
+uint8_t getRsItemType(uint32_t type) { return (type >> 8) & 0xFF; }
+uint8_t getRsItemSubType(uint32_t type) { return (type & 0xFF); }
+uint16_t getRsItemService(uint32_t type) { return (type >> 8) & 0xFFFF;}
 
 std::ostream &printRsItemBase(std::ostream &out, std::string clsName, uint16_t indent)
 {
@@ -561,3 +540,7 @@ uint32_t getRsPktBaseSize()
 	return 8; /* 4 + 4 */
 }
 
+/// DEPRECATED
+uint32_t getRsItemId(void *data) { return getRsItemId((const uint8_t *) data); }
+/// DEPRECATED
+uint32_t getRsItemSize(void * data) { return getRsItemSize((const uint8_t *)data); }

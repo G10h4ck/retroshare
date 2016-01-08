@@ -35,12 +35,9 @@
 /************************************* Peer Id Set ************************************/
 
 
-RsTlvStringSet::RsTlvStringSet(uint16_t type) :mType(type)
-{
-}
+RsTlvStringSet::RsTlvStringSet(uint16_t type) : mType(type) {}
 
-
-bool     RsTlvStringSet::SetTlv(void *data, uint32_t size, uint32_t *offset) const 
+bool RsTlvStringSet::SetTlv(void *data, uint32_t size, uint32_t *offset) const
 {
 	/* must check sizes */
 	uint32_t tlvsize = TlvSize();
@@ -95,19 +92,15 @@ uint32_t RsTlvStringSet::TlvSize() const
 }
 
 
-bool RsTlvStringSet::GetTlv(void *data, uint32_t size, uint32_t *offset)
+bool RsTlvStringSet::GetTlv(const uint8_t data[], uint32_t size, uint32_t &offset)
 {
-	if (size < *offset + TLV_HEADER_SIZE) return false;
+	if (size < offset + TLV_HEADER_SIZE) return false;
+	uint16_t tlvtype = GetTlvType( data + offset );
+	uint32_t tlvsize = GetTlvSize( data + offset );
+	uint32_t tlvend = offset + tlvsize;
 
-	uint16_t tlvtype = GetTlvType( &(((uint8_t *) data)[*offset]) );
-	uint32_t tlvsize = GetTlvSize( &(((uint8_t *) data)[*offset]) );
-	uint32_t tlvend = *offset + tlvsize;
-
-	if (size < tlvend) // check size
-		return false;// not enough space
-
-	if (tlvtype != mType) // check type
-		return false;
+	if (size < tlvend) return false; // not enough space
+	if (tlvtype != mType) return false; // wrong type
 
 	bool ok = true;
 
@@ -115,26 +108,20 @@ bool RsTlvStringSet::GetTlv(void *data, uint32_t size, uint32_t *offset)
 	TlvClear();
 
 	// skip the header
-	(*offset) += TLV_HEADER_SIZE;
+	offset += TLV_HEADER_SIZE;
 
 	// while there is TLV
-	while((*offset) + 2 < tlvend)
+	while( ok && ((offset + 2) < tlvend) )
 	{
 		// get the next type
-		uint16_t tlvsubtype = GetTlvType( &(((uint8_t *) data)[*offset]) );
+		uint16_t tlvsubtype = GetTlvType( data + offset );
 		if (tlvsubtype == TLV_TYPE_STR_GENID)
 		{
 			std::string newIds;
 			ok &= GetTlvString(data, tlvend, offset, TLV_TYPE_STR_GENID, newIds);
 			if(ok) strSet.push_back(newIds);
 		}
-		else
-		{
-			/* Step past unknown TLV TYPE */
-			ok &= SkipUnknownTlv(data, tlvend, offset);
-		}
-
-		if (!ok) break;
+		else ok &= SkipTlv(data, tlvend, offset);
 	}
 
 	/***************************************************************************
@@ -142,14 +129,14 @@ bool RsTlvStringSet::GetTlv(void *data, uint32_t size, uint32_t *offset)
 	 *            or be present (if this code is reading an extended version).
 	 *
 	 * We must chew up the extra characters to conform with TLV specifications
-	 ***************************************************************************/
-	if (*offset != tlvend)
+	 **************************************************************************/
+	if (offset != tlvend)
 	{
 #ifdef TLV_DEBUG
 		std::cerr << "RsTlvPeerIdSet::GetTlv() Warning extra bytes at end of item"
 		          << std::endl;
 #endif
-		*offset = tlvend;
+		offset = tlvend;
 	}
 
 	return ok;

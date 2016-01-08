@@ -238,13 +238,13 @@ const uint32_t RSTLV_IMAGE_TYPE_PNG = 0x0001;
 const uint32_t RSTLV_IMAGE_TYPE_JPG = 0x0002;
 
 /**** Basic TLV Functions ****/
-uint32_t GetTlvSize(void *data);
-uint16_t GetTlvType(void *data);
+uint32_t GetTlvSize(void *data); /// DEPRECATED @see RsTlvItem::GetTlvSize
+uint16_t GetTlvType(void *data); /// DEPRECATED @see RsTlvItem::GetTlvType
 bool     SetTlvBase(void *data, uint32_t size, uint32_t *offset, uint16_t type, uint32_t len);
 bool     SetTlvSize(void *data, uint32_t size, uint32_t len);
 bool 	 SetTlvType(void *data, uint32_t size, uint16_t type);
 
-/* skip past the unknown tlv elements */
+/// DEPRECATED @see RsTlvItem::SkipUnknownTlv
 bool SkipUnknownTlv(void *data, uint32_t size, uint32_t *offset);
 
 /**** Generic TLV Functions ****
@@ -272,6 +272,7 @@ uint32_t GetTlvUInt64Size();
 
 
 bool     SetTlvString(void *data, uint32_t size, uint32_t *offset, uint16_t type, std::string out);
+/// DEPRECATED @see RsTlvItem::GetTlvString
 bool     GetTlvString(void *data, uint32_t size, uint32_t *offset, uint16_t type, std::string &in);
 uint32_t GetTlvStringSize(const std::string &in);
 
@@ -288,6 +289,10 @@ uint32_t GetTlvIpAddrPortV4Size();
 bool     SetTlvIpAddrPortV6(void *data, uint32_t size, uint32_t *offset, uint16_t type, struct sockaddr_in6 *out);
 bool     GetTlvIpAddrPortV6(void *data, uint32_t size, uint32_t *offset, uint16_t type, struct sockaddr_in6 *in);
 uint32_t GetTlvIpAddrPortV6Size();
+
+// Helper function
+bool find_decoded_string(const std::string& in,
+                         const std::string& suspicious_string);
 
 // TODO: 2016/01/02 Dead Code?
 /* additional function to be added

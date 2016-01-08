@@ -42,12 +42,15 @@ public:
 	virtual uint32_t TlvSize() const;
 	virtual void TlvClear();
 	virtual bool SetTlv(void *data, uint32_t size, uint32_t *offset) const;
-	virtual bool GetTlv(void *data, uint32_t size, uint32_t *offset);
+	virtual bool GetTlv(const uint8_t data[], uint32_t size, uint32_t &offset);
 	virtual std::ostream &print(std::ostream &out, uint16_t indent) const;
 	virtual std::ostream &printHex(std::ostream &out, uint16_t indent) const;
 
 	uint16_t mType;
 	std::list<std::string> strSet; /// Mandatory
+
+	bool GetTlv(void *data, uint32_t size, uint32_t *offset) /// DEPRECATED
+	{ return GetTlv((const uint8_t *)data, size, *offset); }
 };
 
 /**
