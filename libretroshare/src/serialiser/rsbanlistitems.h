@@ -31,6 +31,7 @@
 #include "serialiser/rsserviceids.h"
 #include "serialiser/rsserial.h"
 #include "serialiser/rstlvbanlist.h"
+#include "serialiser/rsautoserialize.h"
 
 #define RS_PKT_SUBTYPE_BANLIST_ITEM_deprecated  		0x01
 #define RS_PKT_SUBTYPE_BANLIST_CONFIG_ITEM_deprecated   	0x02

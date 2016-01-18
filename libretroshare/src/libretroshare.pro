@@ -456,6 +456,7 @@ HEADERS +=	serialiser/itempriorities.h \
 			serialiser/rsgxsrecognitems.h \
 			serialiser/rsgxsupdateitems.h \
 			serialiser/rsserviceinfoitems.h \
+			serialiser/rsautoserialize.h
 
 HEADERS +=	services/p3msgservice.h \
 			services/p3service.h \
@@ -501,7 +502,8 @@ SOURCES +=	dbase/cachestrapper.cc \
 			dbase/fimonitor.cc \
 			dbase/findex.cc \
 			dbase/fistore.cc \
-			dbase/rsexpr.cc
+			dbase/rsexpr.cc \
+			serialiser/rsautoserialize.cc
 
 
 SOURCES +=	ft/ftchunkmap.cc \
