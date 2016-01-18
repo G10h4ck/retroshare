@@ -76,15 +76,24 @@ public:
 	uint32_t size;
 };
 
-template<class OP, typename T> bool processMember(OP&, T&, bool);
+/**
+ * This function is safe so no need of additional check when it is used because
+ * everything must be checked inside.
+ * @tparam OP one of SerializeBuffer/DeserializeBuffer/SerializationSize.
+ * @tparam T type of member to which apply the SerializationOp.
+ * @param op The SerializationOp we want to be applied.
+ * @param member The member on which op should be executed.
+ * @param optional true if this member is not mandatory, false otherwise.
+ */
+template<class OP, typename T> void processMember(OP& op, T& member, bool optional);
 
-template<> bool processMember<SerializeBuffer, const uint8_t>(SerializeBuffer&op, const uint8_t&value, bool opt);
-template<> bool processMember<DeserializeBuffer, uint8_t>(DeserializeBuffer&op, uint8_t&value, bool opt);
-template<> bool processMember<SerializationSize, const uint8_t>(SerializationSize&op, const uint8_t&, bool);
+template<> void processMember<SerializeBuffer, const uint8_t>(SerializeBuffer&op, const uint8_t&value, bool opt);
+template<> void processMember<DeserializeBuffer, uint8_t>(DeserializeBuffer&op, uint8_t&value, bool opt);
+template<> void processMember<SerializationSize, const uint8_t>(SerializationSize&op, const uint8_t&, bool);
 
-template<> bool processMember<SerializeBuffer, const uint16_t>(SerializeBuffer&op, const uint16_t&value, bool opt);
-template<> bool processMember<DeserializeBuffer, uint16_t>(DeserializeBuffer&op, uint16_t&value, bool opt);
-template<> bool processMember<SerializationSize, const uint16_t>(SerializationSize&op, const uint16_t&, bool);
+template<> void processMember<SerializeBuffer, const uint16_t>(SerializeBuffer&op, const uint16_t&value, bool opt);
+template<> void processMember<DeserializeBuffer, uint16_t>(DeserializeBuffer&op, uint16_t&value, bool opt);
+template<> void processMember<SerializationSize, const uint16_t>(SerializationSize&op, const uint16_t&, bool);
 
 
 class RsSerializable
@@ -93,6 +102,13 @@ class RsSerializable
 	bool deserialize(DeserializeBuffer& buf) { return process(buf); }
 	bool serialSize(SerializationSize& buf) { return process(buf); }
 
+	/**
+	 * @brief process member
+	 * Must process first members that are mandatory (opt=false) and then
+	 * optional members (opt=true)
+	 * @param op SerializationOp to apply
+	 * @return true if op succeded, false otherwise
+	 */
 	virtual bool process(SerializationOp &op) = 0;
 };
 
@@ -100,14 +116,17 @@ class ExampleSerializable : public RsSerializable
 {
 	bool process(SerializationOp &op)
 	{
-		bool ok = true;
-		scae(ok, processMember(op, flip, false));
-		scae(ok, processMember(op, flop, false));
-		return ok;
+		processMember(op, flip, false);
+		processMember(op, flop, false);
+		processMember(op, blip, true);
+		processMember(op, blop, true);
+		return op.ok;
 	}
 
 	uint8_t flip;
 	uint8_t flop;
+	uint16_t blip;
+	uint16_t blop;
 };
 
 #endif // RSAUTOSERIALIZE_H
