@@ -32,7 +32,7 @@
 #include <retroshare/rsids.h>
 
 /**
- * @deprecated @see rsautoserialize.h and @see rstlvitem.h instead
+ * @deprecated @see rsautoserialize.h instead
  *
  * This is at the lowlevel packing routines. They are usually 
  * created in pairs - one to pack the data, the other to unpack.

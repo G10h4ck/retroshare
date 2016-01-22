@@ -104,28 +104,46 @@ class RsAutoSerializable;
 /**
  * After long discussion we have consensuated to provide retrocompatible
  * [de]serialization of basic type also if not wrapped into an RsSerializable
- * manly to reduce the impact on pre-existent code and make it easier to port it
- * to the new serialization system (based on RsAutoSerializable), for this only
- * purpose we provide non wrapping serializers with static methods.
+ * mainly to reduce porting impact for pre-existent code and make it easier to
+ * port it to the new serialization system (based on @see RsAutoSerializable),
+ * for this only purpose we provide commodity non wrapping serializers.
  * This has been written for RsAutoSerializable internal usage you should not
  * implement more RsSerializer, neither you should inherit direclty from
  * RsSerializer, or use it inside your own RsSerializable.
  * If you have got here you are probably interested in what already provided by
- * more specialized classes such as @see RsAutoTlvSerializable if you need to
- * [de]serialize a basic type that is not already provided as an
- * @see RsSerializer you should write a discendant of @see RsAutoTlvSerializable
- * for that purpose.
+ * @see RsAutoSerializable.
+ * Only in case your new @see RsAutoSerializable has a member to [de]serialize
+ * of a basic type not yet implemented you may consider to implement an
+ * RsSerializer for it in this file and modify @see RsAutoSerializable
+ * accordingly, but make sure before to talk extensively with other devs about
+ * not it implementing as a @see RsAutoSerializable child.
  */
-template<typename T> class RsSerializer {};
-
-
-/// Template to generate RsSerializer for standard integral types
-template<typename N, uint32_t SIZE> class t_SerializerNType
+class RsSerializerBase
 {
 public:
-	static bool serialize(uint8_t data[], uint32_t size, uint32_t &offset,
-	                      const RsAutoSerializable * autoObj,
-	                      const int RsAutoSerializable::* member)
+	/// TODO: 2016/01/22 Missing docuentation
+	virtual bool serialize(uint8_t data[], uint32_t size, uint32_t &offset,
+	                       const RsAutoSerializable * autoObj,
+	                       const int RsAutoSerializable::* member) = 0;
+	/// TODO: 2016/01/22 Missing docuentation
+	virtual bool deserialize(const uint8_t data[], uint32_t size,
+	                         uint32_t &offset, RsAutoSerializable * autoObj,
+	                         int RsAutoSerializable::* member) = 0;
+	/// TODO: 2016/01/22 Missing docuentation
+	virtual uint32_t serialSize(const RsAutoSerializable * autoObj,
+	                            const int RsAutoSerializable::* member) = 0;
+};
+
+/// RsSerializer base template
+template<typename T> class RsSerializer : public RsSerializerBase {};
+
+/// Templates to generate RsSerializer for standard integral types
+template<typename N, uint32_t SIZE> class t_SerializerNType : public RsSerializerBase
+{
+public:
+	bool serialize(uint8_t data[], uint32_t size, uint32_t &offset,
+	               const RsAutoSerializable * autoObj,
+	               const int RsAutoSerializable::* member)
 	{
 		if (size <= offset || size - offset < SIZE) return false;
 		const N * absPtr = (const N *) &(autoObj->*member);
@@ -134,9 +152,9 @@ public:
 		offset += SIZE;
 		return true;
 	}
-	static bool deserialize(const uint8_t data[], uint32_t size,
-	                        uint32_t &offset, RsAutoSerializable * autoObj,
-	                        int RsAutoSerializable::* member)
+	bool deserialize(const uint8_t data[], uint32_t size,
+	                 uint32_t &offset, RsAutoSerializable * autoObj,
+	                 int RsAutoSerializable::* member)
 	{
 		if (size <= offset || size - offset < SIZE) return false;
 		N * absPtr = (N *) &(autoObj->*member);
@@ -145,9 +163,10 @@ public:
 		offset += SIZE;
 		return true;
 	}
-	static inline uint32_t serializedSize() { return SIZE; }
+	inline uint32_t serialSize(const RsAutoSerializable * /*autoObj*/,
+	                           const int RsAutoSerializable::* /*member*/)
+	{ return SIZE; }
 };
-
 template<> class RsSerializer<uint8_t> : public t_SerializerNType<uint8_t, 1>{};
 template<> class RsSerializer<uint16_t> : public t_SerializerNType<uint16_t, 2>{};
 template<> class RsSerializer<uint32_t> : public t_SerializerNType<uint32_t, 4>{};
@@ -155,15 +174,16 @@ template<> class RsSerializer<uint64_t> : public t_SerializerNType<uint64_t, 8>{
 template<> class RsSerializer<time_t> : public RsSerializer<uint64_t> {};
 
 /// Serializer for <b>non negative</b> float
-template<> class RsSerializer<float>
+template<> class RsSerializer<float> : public RsSerializerBase
 {
 public:
-	static bool serialize(uint8_t data[], uint32_t size, uint32_t &offset,
-	                      const RsAutoSerializable * autoObj,
-	                      const int RsAutoSerializable::* member)
+	bool serialize(uint8_t data[], uint32_t size, uint32_t &offset,
+	               const RsAutoSerializable * autoObj,
+	               const int RsAutoSerializable::* member)
 	{
+		uint32_t sz = serialSize(autoObj, member);
 		if ( !data || size <= offset ||
-		     size - offset < RsSerializer<float>::serializedSize() )
+		     size - offset < sz )
 			return false;
 
 		const float * absPtr = (const float *) &(autoObj->*member);
@@ -181,38 +201,41 @@ public:
 		if(*absPtr < 1e-7) n = (~(uint32_t)0);
 		else n = ((uint32_t)( (1.0f/(1.0f+*absPtr) * (~(uint32_t)0))));
 		n = hton<uint32_t>(n);
-		memcpy(data+offset, &n, RsSerializer<float>::serializedSize());
-		offset += RsSerializer<float>::serializedSize();
+		memcpy(data+offset, &n, sz);
+		offset += sz;
 		return true;
 	}
-	static bool deserialize(const uint8_t data[], uint32_t size,
-	                        uint32_t &offset, RsAutoSerializable * autoObj,
-	                        int RsAutoSerializable::* member)
+	bool deserialize(const uint8_t data[], uint32_t size,
+	                 uint32_t &offset, RsAutoSerializable * autoObj,
+	                 int RsAutoSerializable::* member)
 	{
+		uint32_t sz = serialSize(autoObj, member);
 		if ( !data || size <= offset ||
-		     size - offset < RsSerializer<float>::serializedSize() )
+		     size - offset < sz )
 			return false;
 
 		uint32_t n;
-		memcpy(&n, data+offset, RsSerializer<float>::serializedSize());
+		memcpy(&n, data+offset, sz);
 		n = ntoh<uint32_t>(n);
 		float * absPtr = (float *) &(autoObj->*member);
 		*absPtr = 1.0f/ ( n/(float)(~(uint32_t)0)) - 1.0f;
 		return true;
 	}
-	static inline uint32_t serializedSize() { return 4; }
+	inline uint32_t serialSize(const RsAutoSerializable * /*autoObj*/,
+	                           const int RsAutoSerializable::* /*member*/)
+	{ return 4; }
 };
 
 /// Serializer for std::string
-template<> class RsSerializer<std::string>
+template<> class RsSerializer<std::string> : public RsSerializerBase
 {
 public:
-	static bool serialize(uint8_t data[], uint32_t size, uint32_t &offset,
-	                      const RsAutoSerializable * autoObj,
-	                      const int RsAutoSerializable::* member)
+	bool serialize(uint8_t data[], uint32_t size, uint32_t &offset,
+	               const RsAutoSerializable * autoObj,
+	               const int RsAutoSerializable::* member)
 	{
 		if ( !data || size <= offset ||
-		     size - offset < RsSerializer<std::string>::serializedSize(autoObj, member) )
+		     size - offset < serialSize(autoObj, member) )
 			return false;
 
 		const std::string * absPtr = (const std::string *) &(autoObj->*member);
@@ -222,9 +245,9 @@ public:
 		memcpy(data+offset, absPtr->c_str(), charsLen); offset += charsLen;
 		return true;
 	}
-	static bool deserialize(const uint8_t data[], uint32_t size,
-	                        uint32_t &offset, RsAutoSerializable * autoObj,
-	                        int RsAutoSerializable::* member)
+	bool deserialize(const uint8_t data[], uint32_t size,
+	                 uint32_t &offset, RsAutoSerializable * autoObj,
+	                 int RsAutoSerializable::* member)
 	{
 		if ( !data || size <= offset || size - offset < 4 ) return false;
 		uint32_t charsLen;
@@ -238,107 +261,103 @@ public:
 		offset += charsLen;
 		return true;
 	}
-	static inline uint32_t serializedSize(const RsAutoSerializable * autoObj,
-	                                      const int RsAutoSerializable::* member)
+	inline uint32_t serialSize(const RsAutoSerializable * autoObj,
+	                           const int RsAutoSerializable::* member)
 	{
 		const std::string * absPtr = (const std::string *) &(autoObj->*member);
 		return absPtr->length() + 4;
 	}
 };
 
+/// RsSerializer <i>wrapper</i> for RsSerializable
+template<> class RsSerializer<RsSerializable> : public RsSerializerBase
+{
+public:
+	inline bool serialize(uint8_t data[], uint32_t size, uint32_t &offset,
+	               const RsAutoSerializable * autoObj,
+	               const int RsAutoSerializable::* member)
+	{ return reinterpret_cast<const RsSerializable * >(&(autoObj->*member))->serialize(data, size, offset); }
+	inline bool deserialize(const uint8_t data[], uint32_t size,
+	                 uint32_t &offset, RsAutoSerializable * autoObj,
+	                 int RsAutoSerializable::* member)
+	{ return reinterpret_cast<RsSerializable * >(&(autoObj->*member))->deserialize(data, size, offset); }
+	inline uint32_t serialSize(const RsAutoSerializable * autoObj,
+	                           const int RsAutoSerializable::* member)
+	{ return reinterpret_cast<const RsSerializable * >(&(autoObj->*member))->serialSize(); }
+};
+
 /**
  * @brief Base class for RetroShare automatics [de]serializable classes
  * Provide auto-[de]serialization for members of RsSerializable discendant types
  * and for some standard C++ types.
- * Members that wanna be auto-[de]serialized must be registered in constructor.
+ * Inherit from this class if you are about to implement a new serializable or
+ * are renewing an existing one, retrocompatibility should not be a problem as
+ * the serialized format isn't affected.
+ * Use class members as building blocks of your derived RsAutoSerializable
+ * discendant then register them for automatic [de]serialization in
+ * serialDescription() with the help of registerSerializable(...), this way your
+ * class will benefit of automatic [de]serialization without writing a single
+ * line of boring code.
+ * The usage of automatic [de]serialization will make the code safer as raw
+ * serialized material manipulation is done just in one place, and duplication
+ * on potencial security critical code is elegantly avoided making everything
+ * easier to check audit.
  */
 class RsAutoSerializable : public RsSerializable
 {
 public:
-	uint32_t serialSize() const
-	{
-		uint32_t acc = 0;
-		std::vector<std::pair<ObjectType,int RsAutoSerializable::*> >::const_iterator it;
-		for(it = mToSerialise.begin(); it != mToSerialise.end(); ++it)
-		{
-			switch((*it).first)
-			{
-			case OBJECT_TYPE_UINT8:  acc += RsSerializer<uint8_t>::serializedSize(); break;
-			case OBJECT_TYPE_UINT16: acc += RsSerializer<uint16_t>::serializedSize(); break;
-			case OBJECT_TYPE_UINT32: acc += RsSerializer<uint32_t>::serializedSize(); break;
-			case OBJECT_TYPE_UINT64: acc += RsSerializer<uint64_t>::serializedSize(); break;
-			case OBJECT_TYPE_UFLOAT32:
-			case OBJECT_TYPE_TIME:
-			case OBJECT_TYPE_STR: acc += RsSerializer<std::string>::serializedSize(this, (*it).second); break;
-			/* For RsSerializable discendant objects. We need to cast to
-			 * RsSerializable and call the pure virtual serialize(...) method
-			 * and C++ dynamic dispatch will take care of calling serialize(...)
-			 * for the original object class */
-			case OBJECT_TYPE_SRZ: acc += (this->*reinterpret_cast<RsSerializable RsAutoSerializable::*>((*it).second)).serialSize(); break;
-			}
-		}
-		return acc;
-	}
+	/**
+	 * @copydoc RsSerializable::serialize()
+	 * This method is to be considered final, you should not override it.
+	 */
 	bool serialize(uint8_t data[], uint32_t size, uint32_t &offset) const
 	{
 		if ( !data || size <= offset || size - offset < serialSize() )
 			return false;
 
 		bool ok = true;
+		const std::vector<std::pair<ObjectType,int RsAutoSerializable::*> > &sd = serialDescription();
 		std::vector<std::pair<ObjectType,int RsAutoSerializable::*> >::const_iterator it;
-		for(it = mToSerialise.begin(); ok && it != mToSerialise.end(); ++it)
-		{
-			switch((*it).first)
-			{
-			case OBJECT_TYPE_UINT8:  ok &= RsSerializer<uint8_t>::serialize(data, size, offset, this, (*it).second); break;
-			case OBJECT_TYPE_UINT16: ok &= RsSerializer<uint16_t>::serialize(data, size, offset, this, (*it).second); break;
-			case OBJECT_TYPE_UINT32: ok &= RsSerializer<uint32_t>::serialize(data, size, offset, this, (*it).second); break;
-			case OBJECT_TYPE_UINT64: ok &= RsSerializer<uint64_t>::serialize(data, size, offset, this, (*it).second); break;
-			case OBJECT_TYPE_UFLOAT32:
-			case OBJECT_TYPE_TIME:
-			case OBJECT_TYPE_STR: ok &= RsSerializer<std::string>::serialize(data, size, offset, this, (*it).second); break;
-			case OBJECT_TYPE_SRZ: ok &= (this->*reinterpret_cast<RsSerializable RsAutoSerializable::*>((*it).second)).serialize(data, size, offset); break;
-			}
-		}
+		for(it = sd.begin(); ok && it != sd.end(); ++it)
+			ok &= objectSerializer((*it).first)->serialize(data, size, offset, this, (*it).second);
 		return ok;
 	}
+	/**
+	 * @copydoc RsSerializable::deserialize()
+	 * This method is to be considered final, you should not override it.
+	 */
 	bool deserialize(const uint8_t data[], uint32_t size, uint32_t &offset)
 	{
 		if ( !data || size <= offset ) return false;
 		/* Can't check if there is enough space because serialSize() may return
 		 * an unvalid value here as empty variable size members can be presents
 		 * this is not unsafe as sub member::deserialize(...) will check it. */
-
 		bool ok = true;
+		const std::vector<std::pair<ObjectType,int RsAutoSerializable::*> > &sd = serialDescription();
 		std::vector<std::pair<ObjectType,int RsAutoSerializable::*> >::const_iterator it;
-		for(it = mToSerialise.begin(); ok && it != mToSerialise.end(); ++it)
-		{
-			switch((*it).first)
-			{
-			case OBJECT_TYPE_UINT8:  ok &= RsSerializer<uint8_t>::deserialize(data, size, offset, this, (*it).second); break;
-			case OBJECT_TYPE_UINT16: ok &= RsSerializer<uint16_t>::deserialize(data, size, offset, this, (*it).second); break;
-			case OBJECT_TYPE_UINT32: ok &= RsSerializer<uint32_t>::deserialize(data, size, offset, this, (*it).second); break;
-			case OBJECT_TYPE_UINT64: ok &= RsSerializer<uint64_t>::deserialize(data, size, offset, this, (*it).second); break;
-			case OBJECT_TYPE_UFLOAT32: ok &= RsSerializer<float>::deserialize(data, size, offset, this, (*it).second); break;
-			case OBJECT_TYPE_TIME: ok &= RsSerializer<time_t>::deserialize(data, size, offset, this, (*it).second); break;
-			case OBJECT_TYPE_STR: ok &= RsSerializer<std::string>::deserialize(data, size, offset, this, (*it).second); break;
-			case OBJECT_TYPE_SRZ: ok &= (this->*reinterpret_cast<RsSerializable RsAutoSerializable::*>((*it).second)).deserialize(data, size, offset); break;
-			}
-		}
+		for(it = sd.begin(); ok && it != sd.end(); ++it)
+			ok &= objectSerializer((*it).first)->deserialize(data, size, offset, this, (*it).second);
 		return ok;
 	}
-
-protected:
-	/**
-	 * Derivative classes must use this function to register members for
-	 * automatic [de]serialization in constructor.
+	/** @copydoc RsSerializable::serialSize()
+	 * This method is to be considered final, you should not override it.
 	 */
-	template<class A, class T> void registerSerializable(T A::* member) { mToSerialise.push_back( std::make_pair(objectType<T>(),reinterpret_cast<int RsAutoSerializable::*>(member))); }
+	uint32_t serialSize() const
+	{
+		uint32_t acc = 0;
+		const std::vector<std::pair<ObjectType,int RsAutoSerializable::*> > &sd = serialDescription();
+		std::vector<std::pair<ObjectType,int RsAutoSerializable::*> >::const_iterator it;
+		for(it = sd.begin(); it != sd.end(); ++it)
+			acc += objectSerializer((*it).first)->serialSize(this, (*it).second);
+		return acc;
+	}
 
 private:
 	/**
 	 * Used internally to keep track of type of registered for [de]serialization
 	 * members.
+	 * If you edit this take care of updating objectType() and
+	 * objectSerializer(...).
 	 */
 	enum ObjectType
 	{
@@ -353,15 +372,78 @@ private:
 	};
 
 	/// Map C++ types into corresponding ObjectType
-	template<class T> ObjectType objectType();
+	template<class T> static ObjectType objectType();
+
+	/// Map ObjectType into corresponding RsSerializer
+	static RsSerializerBase * objectSerializer(ObjectType type)
+	{
+		switch(type)
+		{
+		case(OBJECT_TYPE_UINT8): { static RsSerializer<uint8_t> rs; return &rs; }
+		case(OBJECT_TYPE_UINT16): { static RsSerializer<uint16_t> rs; return &rs; }
+		case(OBJECT_TYPE_UINT32): { static RsSerializer<uint32_t> rs; return &rs; }
+		case(OBJECT_TYPE_UINT64): { static RsSerializer<uint64_t> rs; return &rs; }
+		case(OBJECT_TYPE_UFLOAT32): { static RsSerializer<float> rs; return &rs; }
+		case(OBJECT_TYPE_TIME): { static RsSerializer<time_t> rs; return &rs; }
+		case(OBJECT_TYPE_STR): { static RsSerializer<std::string> rs; return &rs; }
+		case(OBJECT_TYPE_SRZ): { static RsSerializer<RsSerializable> rs; return &rs; }
+		}
+	}
+
+protected:
+	/**
+	 * Derivative classes must use this function to register members for
+	 * automatic [de]serialization in constructor.
+	 */
+	template<class A, class T> static void registerSerializable
+	( T A::* member,
+	  std::vector<std::pair<ObjectType, int RsAutoSerializable::*> > &reg )
+	{
+		reg.push_back(
+		            std::make_pair(
+		                objectType<T>(),
+		                reinterpret_cast<int RsAutoSerializable::*>(member)
+		                )
+		            );
+	}
 
 	/**
-	 * Keep track of members and associated ObjectType registered for automatic
-	 * [de]serialization.
+	 * @brief Get the serial structure description of this RsAutoSerializable.
+	 * @return A reference to a cost vector of pairs representing the
+	 *         serialization structure.
+	 *
+	 * @details
+	 * This is expected to be implemented in an efficent manner, also by child
+	 * classes. The serial structure so the description is the same for all the
+	 * object of the same type so the description is calculated and stored just
+	 * one time for each class and not duplicate it accross all objects.
+	 * Child classes should implement this function like this:
+@code{.cpp}
+virtual const std::vector<std::pair<ObjectType, int RsAutoSerializable::*> > & serialDescription() const
+{
+	// static make sure variables are initialized just one time
+	static bool initialize = true;
+	// Don't forget to inherit parent structure if it implements serialDescription()
+	static std::vector<std::pair<ObjectType, int RsAutoSerializable::*> > reg(ParentRsAutoSerializable::serialDescription());
+	if (initialize)
+	{
+		// If serial structure representation hasn't been populated yet register
+		// serializable members of this class
+		registerSerializable(&RsAutoSerializable::member_test, reg);
+
+		// Make sure this will not be executed again
+		initialize = false;
+	}
+	return reg;
+}
+@endcode
 	 */
-	std::vector<std::pair<ObjectType,int RsAutoSerializable::*> > mToSerialise;
+	virtual const std::vector<std::pair<ObjectType, int RsAutoSerializable::*> > & serialDescription() const = 0;
 };
 
+/* TODO: How can we move all this inside the class?
+ * It woulf stay next to ObjectType declaration and it would be easier to check
+ * if is defined for all enum type */
 template<> inline RsAutoSerializable::ObjectType RsAutoSerializable::objectType<uint8_t>()        { return OBJECT_TYPE_UINT8; }
 template<> inline RsAutoSerializable::ObjectType RsAutoSerializable::objectType<uint16_t>()       { return OBJECT_TYPE_UINT16; }
 template<> inline RsAutoSerializable::ObjectType RsAutoSerializable::objectType<uint32_t>()       { return OBJECT_TYPE_UINT32; }
