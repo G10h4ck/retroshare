@@ -62,6 +62,7 @@
 #include <retroshare/rsiface.h>
 #include "gui/notifyqt.h"
 #include <unistd.h>
+#include "serialiser/rsautoserialize.h"
 
 static void displayWarningAboutDSAKeys()
 {
@@ -122,7 +123,9 @@ QString filedialog_existing_directory_hook(QWidget *parent, const QString &capti
 #endif
 
 int main(int argc, char *argv[])
-{ 
+{
+	test_autoserial2();
+
 #ifdef WINDOWS_SYS
 	// The current directory of the application is changed when using the native dialog on Windows
 	// This is a quick fix until libretroshare is using a absolute path in the portable Version

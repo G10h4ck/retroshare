@@ -43,7 +43,7 @@
  * RetroShare [de]serialization.
  */
 
-#include "serialiser/rsbaseserial.h"
+#include <stdint.h>
 
 /// @def Short Circuit And Equals
 #define scae(acc, expr) do { acc = acc && (expr);} while (false)
@@ -98,10 +98,12 @@ template<> void processMember<SerializationSize, const uint16_t>(SerializationSi
 
 class RsSerializable
 {
+public:
 	bool serialize(SerializeBuffer& buf) { return process(buf); }
 	bool deserialize(DeserializeBuffer& buf) { return process(buf); }
 	bool serialSize(SerializationSize& buf) { return process(buf); }
 
+protected:
 	/**
 	 * @brief process member
 	 * Must process first members that are mandatory (opt=false) and then
@@ -112,21 +114,6 @@ class RsSerializable
 	virtual bool process(SerializationOp &op) = 0;
 };
 
-class ExampleSerializable : public RsSerializable
-{
-	bool process(SerializationOp &op)
-	{
-		processMember(op, flip, false);
-		processMember(op, flop, false);
-		processMember(op, blip, true);
-		processMember(op, blop, true);
-		return op.ok;
-	}
-
-	uint8_t flip;
-	uint8_t flop;
-	uint16_t blip;
-	uint16_t blop;
-};
+void test_autoserial2();
 
 #endif // RSAUTOSERIALIZE_H
