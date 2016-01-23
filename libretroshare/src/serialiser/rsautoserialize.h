@@ -103,7 +103,7 @@ class RsAutoSerializable;
 
 /**
  * After long discussion we have consensuated to provide retrocompatible
- * [de]serialization of basic type also if not wrapped into an RsSerializable
+ * [de]serialization of basic types also if not wrapped into an RsSerializable
  * mainly to reduce porting impact for pre-existent code and make it easier to
  * port it to the new serialization system (based on @see RsAutoSerializable),
  * for this only purpose we provide commodity non wrapping serializers.
@@ -121,15 +121,39 @@ class RsAutoSerializable;
 class RsSerializerBase
 {
 public:
-	/// TODO: 2016/01/22 Missing docuentation
+	/**
+	 * @brief Similar to @see RsSerializable::serialize(), but operate only on
+	 * the single given member instead of operating on the whole object.
+	 * @param data @see RsSerializable::serialize()
+	 * @param size @see RsSerializable::serialize()
+	 * @param offset @see RsSerializable::serialize()
+	 * @param autoObj object to which the member pertain
+	 * @param member member pointer to member to serialize
+	 * @return @see RsSerializable::serialize()
+	 */
 	virtual bool serialize(uint8_t data[], uint32_t size, uint32_t &offset,
 	                       const RsAutoSerializable * autoObj,
 	                       const int RsAutoSerializable::* member) = 0;
-	/// TODO: 2016/01/22 Missing docuentation
+	/**
+	 * @brief Similar to @see RsSerializable::deserialize(), but operate only on
+	 * the single given member instead of operating on the whole object.
+	 * @param data @see RsSerializable::deserialize()
+	 * @param size @see RsSerializable::deserialize()
+	 * @param offset @see RsSerializable::deserialize()
+	 * @param autoObj object to which the member pertain
+	 * @param member member pointer to member to serialize
+	 * @return @see RsSerializable::deserialize()
+	 */
 	virtual bool deserialize(const uint8_t data[], uint32_t size,
 	                         uint32_t &offset, RsAutoSerializable * autoObj,
 	                         int RsAutoSerializable::* member) = 0;
-	/// TODO: 2016/01/22 Missing docuentation
+	/**
+	 * @brief Similar to @see RsSerializable::serialSize(), but operate only on
+	 * the single given member instead of operating on the whole object.
+	 * @param autoObj object to which the member pertain
+	 * @param member member pointer to member to serialize
+	 * @return @see RsSerializable::serialSize()
+	 */
 	virtual uint32_t serialSize(const RsAutoSerializable * autoObj,
 	                            const int RsAutoSerializable::* member) = 0;
 };
@@ -194,9 +218,9 @@ public:
 			return false;
 		}
 
-		/* This serialisation is quite accurate. The max relative error is approx.
-		 * 0.01% and most of the time less than 1e-05% The error is well distributed
-		 * over numbers also. */
+		/* This serialisation is quite accurate. The max relative error is
+		 * approximately 0.01% and most of the time less than 1e-05%, The error
+		 * is well distributed over numbers also. */
 		uint32_t n;
 		if(*absPtr < 1e-7) n = (~(uint32_t)0);
 		else n = ((uint32_t)( (1.0f/(1.0f+*absPtr) * (~(uint32_t)0))));
@@ -286,6 +310,7 @@ public:
 	{ return reinterpret_cast<const RsSerializable * >(&(autoObj->*member))->serialSize(); }
 };
 
+
 /**
  * @brief Base class for RetroShare automatics [de]serializable classes
  * Provide auto-[de]serialization for members of RsSerializable discendant types
@@ -316,8 +341,8 @@ public:
 			return false;
 
 		bool ok = true;
-		const std::vector<std::pair<ObjectType,int RsAutoSerializable::*> > &sd = serialDescription();
-		std::vector<std::pair<ObjectType,int RsAutoSerializable::*> >::const_iterator it;
+		const SerialLayout &sd = serialLayout();
+		SerialLayout::const_iterator it;
 		for(it = sd.begin(); ok && it != sd.end(); ++it)
 			ok &= objectSerializer((*it).first)->serialize(data, size, offset, this, (*it).second);
 		return ok;
@@ -333,8 +358,8 @@ public:
 		 * an unvalid value here as empty variable size members can be presents
 		 * this is not unsafe as sub member::deserialize(...) will check it. */
 		bool ok = true;
-		const std::vector<std::pair<ObjectType,int RsAutoSerializable::*> > &sd = serialDescription();
-		std::vector<std::pair<ObjectType,int RsAutoSerializable::*> >::const_iterator it;
+		const SerialLayout &sd = serialLayout();
+		SerialLayout::const_iterator it;
 		for(it = sd.begin(); ok && it != sd.end(); ++it)
 			ok &= objectSerializer((*it).first)->deserialize(data, size, offset, this, (*it).second);
 		return ok;
@@ -345,8 +370,8 @@ public:
 	uint32_t serialSize() const
 	{
 		uint32_t acc = 0;
-		const std::vector<std::pair<ObjectType,int RsAutoSerializable::*> > &sd = serialDescription();
-		std::vector<std::pair<ObjectType,int RsAutoSerializable::*> >::const_iterator it;
+		const SerialLayout &sd = serialLayout();
+		SerialLayout::const_iterator it;
 		for(it = sd.begin(); it != sd.end(); ++it)
 			acc += objectSerializer((*it).first)->serialSize(this, (*it).second);
 		return acc;
@@ -391,13 +416,15 @@ private:
 	}
 
 protected:
+	typedef std::pair<ObjectType, int RsAutoSerializable::*> TMPair;
+	typedef std::vector<TMPair> SerialLayout;
+
 	/**
 	 * Derivative classes must use this function to register members for
-	 * automatic [de]serialization in constructor.
+	 * automatic [de]serialization in serialLayout().
 	 */
 	template<class A, class T> static void registerSerializable
-	( T A::* member,
-	  std::vector<std::pair<ObjectType, int RsAutoSerializable::*> > &reg )
+	( T A::* member, SerialLayout &reg )
 	{
 		reg.push_back(
 		            std::make_pair(
@@ -416,29 +443,44 @@ protected:
 	 * This is expected to be implemented in an efficent manner, also by child
 	 * classes. The serial structure so the description is the same for all the
 	 * object of the same type so the description is calculated and stored just
-	 * one time for each class and not duplicate it accross all objects.
+	 * one time for each class and not duplicated accross all objects.
 	 * Child classes should implement this function like this:
 @code{.cpp}
-virtual const std::vector<std::pair<ObjectType, int RsAutoSerializable::*> > & serialDescription() const
-{
-	// static make sure variables are initialized just one time
-	static bool initialize = true;
-	// Don't forget to inherit parent structure if it implements serialDescription()
-	static std::vector<std::pair<ObjectType, int RsAutoSerializable::*> > reg(ParentRsAutoSerializable::serialDescription());
-	if (initialize)
+	virtual const SerialLayout & serialLayout() const
 	{
-		// If serial structure representation hasn't been populated yet register
-		// serializable members of this class
-		registerSerializable(&RsAutoSerializable::member_test, reg);
+		// Use local variables for calculation so your internal operations are
+		// guaranted to be thread safe, this initialization will be done every
+		// time but it's cost is neglegible
+		SerialLayout lReg;
 
-		// Make sure this will not be executed again
-		initialize = false;
+		// Calculate the layout only one time, there is a remote possibility
+		// that two or more threads enter this at same time but it is not a
+		// problem because lReg is local so calculation would be duplicated but
+		// thread safe
+		static bool initialize = true;
+		if (initialize)
+		{
+			// Make sure program don't enter this if again
+			initialize = false;
+
+			// If your class is a discendant of an autoserializable that may
+			// already have a layout, inherit his layout first
+			lReg = ParentRsAutoSerializable::serialLayout();
+
+			// Register your serializable members for automatic serialization
+			registerSerializable(&ThisRsAutoSerializable::member1_name, lReg);
+			registerSerializable(&ThisRsAutoSerializable::member2_name, lReg);
+			registerSerializable(&ThisRsAutoSerializable::member3_name, lReg);
+		}
+
+		// As this call to SerialLayout copy constructor is thread safe this
+		// static initialization guarantee that this is executed really once
+		static SerialLayout reg(lReg);
+		return reg;
 	}
-	return reg;
-}
 @endcode
 	 */
-	virtual const std::vector<std::pair<ObjectType, int RsAutoSerializable::*> > & serialDescription() const = 0;
+	virtual const SerialLayout & serialLayout() const = 0;
 };
 
 /* TODO: How can we move all this inside the class?
