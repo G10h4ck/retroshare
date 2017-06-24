@@ -88,7 +88,7 @@
     <content url="file:///opt/Qt5.8.0/5.8/android_armv7/src/android/java/src">
       <sourceFolder url="file:///opt/Qt5.8.0/5.8/android_armv7/src/android/java/src" isTestSource="false" />
     </content>
-    <orderEntry type="jdk" jdkName="Android API 23 Platform" jdkType="Android SDK" />
+    <orderEntry type="jdk" jdkName="1.8" jdkType="JavaSDK" />
     <orderEntry type="sourceFolder" forTests="false" />
   </component>
 </module>
