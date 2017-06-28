@@ -27,6 +27,17 @@ QtObject
 	property alias coreReady: coreWatcher.coreReady
 	onCoreReadyChanged: if(coreReady) refreshUnread()
 
+	Component.onCompleted:
+	{
+		addUriHandler("/networkstatus", networkStatusCb)
+
+	}
+
+	property var uriHandlersRegister: ({})
+	property var pendingUriRegister: []
+	function addUriHandler(path, fun) { uriHandlersRegister[path] = fun }
+	function delUriHandler(path, fun) { delete uriHandlersRegister[path] }
+
 	property AutologinManager coreWatcher: AutologinManager { id: coreWatcher }
 
 	function refreshUnreadCallback(par)
@@ -52,5 +63,40 @@ QtObject
 	{
 		console.log("notifyRoot.refreshUnread()")
 		rsApi.request("/chat/unread_msgs", "", refreshUnreadCallback)
+	}
+
+	function networkStatusCb (uriStr)
+	{
+
+	}
+
+	function handleIntentUri(uriStr)
+	{
+		console.log("handleIntentUri(uriStr)")
+
+		if(!Array.isArray(uriStr.match(/:\/\/[a-zA-Z.-]*\//g)))
+		{
+			/* RetroShare GUI produces links without hostname and only two
+			 * slashes after scheme causing the first piece of the path part
+			 * being interpreted as host, this is awckard and should be fixed in
+			 * the GUI, in the meantime we add a slash for easier parsing, in
+			 * case there is no hostname and just two slashes, we might consider
+			 * to use +hostname+ part for some trick in the future, for example
+			 * it could help other application to recognize retroshare link by
+			 * putting a domain name there that has no meaning for retroshare
+			 */
+			uriStr = uriStr.replace("://", ":///")
+		}
+
+		var uri = new UriJs.URI(uriStr)
+		var hPath = uri.path() // no nesting ATM segmentCoded()
+		console.log(hPath)
+
+		if(typeof uriHandlersRegister[hPath] == "function")
+		{
+			console.log("handleIntentUri(uriStr)", "found handler for path",
+						hPath, uriHandlersRegister[hPath])
+			uriHandlersRegister[hPath](uriStr)
+		}
 	}
 }

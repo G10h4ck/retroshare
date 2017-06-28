@@ -4,5 +4,6 @@
         <file>TokensManager.qml</file>
         <file>AutologinManager.qml</file>
         <file>qmldir</file>
+        <file>URI.js</file>
     </qresource>
 </RCC>
