@@ -44,6 +44,7 @@ int main(int argc, char *argv[])
 	sockPath.append("/libresapi.sock");
 
 	QQmlApplicationEngine engine;
+	RsQmlAppEngine qmlEngine(true);
 
 	qmlRegisterType<NotificationsBridge>(
 	            "org.retroshare.qml_components.NotificationsBridge", 1, 0,
