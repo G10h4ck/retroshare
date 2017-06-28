@@ -8,17 +8,23 @@ QT -= gui
 CONFIG += c++11
 CONFIG += dll
 
+HEADERS += rsqmlappengine.h
+
 RESOURCES += qml.qrc
+
 
 TEMPLATE = app
 
 android-g++ {
     TEMPLATE = lib
     QT += androidextras
+    SOURCES += NativeCalls.cpp
+    HEADERS += NativeCalls.h
 }
 
 HEADERS += libresapilocalclient.h notificationsbridge.h
-SOURCES += libresapilocalclient.cpp main.cpp
+SOURCES += libresapilocalclient.cpp main.cpp \
+    rsqmlappengine.cpp
 
 DEPENDPATH *= ../../libretroshare/src
 INCLUDEPATH *= ../../libretroshare/src

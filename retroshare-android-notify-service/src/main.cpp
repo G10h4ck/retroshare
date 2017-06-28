@@ -30,6 +30,7 @@
 
 #include "libresapilocalclient.h"
 #include "notificationsbridge.h"
+#include "rsqmlappengine.h"
 
 int main(int argc, char *argv[])
 {
