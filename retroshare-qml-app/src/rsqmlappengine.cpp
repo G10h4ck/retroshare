@@ -18,7 +18,6 @@
 
 #include "rsqmlappengine.h"
 
-#include <QQuickWindow>
 #include <QDebug>
 
 
@@ -27,11 +26,10 @@
 void RsQmlAppEngine::handleUri(QString uri)
 {
 	QObject* rootObj = rootObjects()[0];
-	QQuickWindow* mainWindow = qobject_cast<QQuickWindow*>(rootObj);
 
-	if(mainWindow)
+	if(rootObj)
 	{
-		QMetaObject::invokeMethod(mainWindow, "handleIntentUri",
+		QMetaObject::invokeMethod(rootObj, "handleIntentUri",
 		                          Qt::AutoConnection,
 		                          Q_ARG(QVariant, uri));
 	}
