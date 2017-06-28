@@ -26,7 +26,10 @@ import android.content.Intent;
 import android.media.RingtoneManager;
 import android.net.Uri;
 
+import android.util.Log;
+
 import org.qtproject.qt5.android.bindings.QtService;
+import org.retroshare.android.qml_app.jni.NativeCalls;
 
 public class RetroShareAndroidNotifyService extends QtService
 {
@@ -54,6 +57,19 @@ public class RetroShareAndroidNotifyService extends QtService
 		NotificationManager mNotificationManager =
 				(NotificationManager) this.getSystemService(Context.NOTIFICATION_SERVICE);
 		mNotificationManager.notify(0, mBuilder.build());
+	}
+
+	@Override
+	public int onStartCommand (Intent intent, int flags, int startId)
+	{
+
+		Log.i("RetroShareConnectionStatus", "onStartCommand() "  );
+
+		String uri = intent.getStringExtra("uri");
+		if (uri != null) NativeCalls.notifyIntentUri(uri);
+		// do something with the value here
+
+		return START_NOT_STICKY;
 	}
 
 	/** Must not be 0 otherwise a new activity may be created when should not

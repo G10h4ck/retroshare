@@ -10,9 +10,10 @@ import android.content.Intent;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 
+import android.net.Uri;
+
 import android.util.Log;
 
-import org.retroshare.android.qml_app.jni.NativeCalls;
 
 public class RetroShareConnectionStatus  extends BroadcastReceiver
 {
@@ -33,6 +34,14 @@ public class RetroShareConnectionStatus  extends BroadcastReceiver
             NetworkInfo activeNetwork = cm.getActiveNetworkInfo();
             boolean isConnected = activeNetwork != null
                     && activeNetwork.isConnectedOrConnecting();
+
+
+            String uri = "//networkstatus/isConnected?" + String.valueOf(isConnected);
+
+            Intent nsIntent = new Intent(context, RetroShareAndroidNotifyService.class);
+            nsIntent.putExtra("uri", uri);
+            context.startService(nsIntent);
+
 
             Log.i("RetroShareConnectionStatus", "onReceive " + isConnected );
 
