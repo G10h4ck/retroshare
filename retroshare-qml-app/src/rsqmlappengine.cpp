@@ -26,13 +26,13 @@
 void RsQmlAppEngine::handleUri(QString uri)
 {
 	QObject* rootObj = rootObjects()[0];
-
 	if(rootObj)
 	{
+		qDebug() << __PRETTY_FUNCTION__ << "Root object is valid";
 		QMetaObject::invokeMethod(rootObj, "handleIntentUri",
 		                          Qt::AutoConnection,
 		                          Q_ARG(QVariant, uri));
 	}
 	else qCritical() << __PRETTY_FUNCTION__
-	                 << "Root object is not a window!";
+	                 << "Root object is not valid!";
 }
