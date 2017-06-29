@@ -17,7 +17,6 @@
  */
 
 #include <QCoreApplication>
-#include <QQmlApplicationEngine>
 #include <QQmlContext>
 #include <QFileInfo>
 #include <QDebug>
@@ -43,8 +42,7 @@ int main(int argc, char *argv[])
 	QString sockPath = QDir::homePath() + "/.retroshare";
 	sockPath.append("/libresapi.sock");
 
-	QQmlApplicationEngine engine;
-	RsQmlAppEngine qmlEngine(true);
+	RsQmlAppEngine engine(true);
 
 	qmlRegisterType<NotificationsBridge>(
 	            "org.retroshare.qml_components.NotificationsBridge", 1, 0,
