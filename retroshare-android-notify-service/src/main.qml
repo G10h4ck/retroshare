@@ -18,6 +18,7 @@
 
 import QtQml 2.2
 import org.retroshare.qml_components.LibresapiLocalClient 1.0
+import "URI.js" as UriJs
 import "." //Needed for TokensManager singleton
 
 QtObject
@@ -65,14 +66,14 @@ QtObject
 		rsApi.request("/chat/unread_msgs", "", refreshUnreadCallback)
 	}
 
-	function networkStatusCb (uriStr)
+	function networkStatusCb(uriStr)
 	{
-
+		console.log("networkStatusCb", uriStr)
 	}
 
 	function handleIntentUri(uriStr)
 	{
-		console.log("handleIntentUri(uriStr)")
+		console.log("handleIntentUri(uriStr)", uriStr)
 
 		if(!Array.isArray(uriStr.match(/:\/\/[a-zA-Z.-]*\//g)))
 		{
