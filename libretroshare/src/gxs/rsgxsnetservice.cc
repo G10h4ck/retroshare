@@ -570,6 +570,8 @@ void RsGxsNetService::syncWithPeers()
     GXSNETDEBUG___ << "RsGxsNetService::syncWithPeers() this=" << (void*)this << ". serviceInfo=" << mServiceInfo << std::endl;
 #endif
 
+	/* G10h4ck: the following line seems to be completely unused, should we
+	 * remove it? */
     static RsNxsSerialiser ser(mServType) ;	// this is used to estimate bandwidth.
 
     RS_STACK_MUTEX(mNxsMutex) ;
@@ -737,7 +739,7 @@ void RsGxsNetService::syncWithPeers()
         }
     }
 
-#endif
+#endif // ndef GXS_DISABLE_SYNC_MSGS
 }
 
 void RsGxsNetService::generic_sendItem(RsNxsItem *si)
@@ -5131,6 +5133,8 @@ bool RsGxsNetService::isDistantPeer(const RsPeerId& pid)
 
 	return mGxsNetTunnel->isDistantPeer(RsGxsNetTunnelVirtualPeerId(pid),group_id);
 }
+
+void RsGxsNetService::requestSynchronization() { syncWithPeers(); }
 
 bool RsGxsNetService::stampMsgServerUpdateTS(const RsGxsGroupId& gid)
 {

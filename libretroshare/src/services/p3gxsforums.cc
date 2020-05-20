@@ -836,6 +836,9 @@ std::error_condition p3GxsForums::getChildPosts(
 	return std::error_condition();
 }
 
+void p3GxsForums::requestSynchronization()
+{ netService()->requestSynchronization(); }
+
 bool p3GxsForums::createGroup(uint32_t &token, RsGxsForumGroup &group)
 {
 	std::cerr << "p3GxsForums::createGroup()" << std::endl;

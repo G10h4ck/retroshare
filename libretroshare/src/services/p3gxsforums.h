@@ -137,6 +137,8 @@ public:
 	        const RsGxsGroupId& forumId, const RsGxsMessageId& parentId,
 	        std::vector<RsGxsForumMsg>& childPosts ) override;
 
+	void requestSynchronization() override; /// @see RsGxsForums
+
     /// implementation of rsGxsGorums
     ///
 	bool getGroupData(const uint32_t &token, std::vector<RsGxsForumGroup> &groups) override;
